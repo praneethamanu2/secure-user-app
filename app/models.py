@@ -1,5 +1,5 @@
 # app/models.py
-from sqlalchemy import Column, Integer, String, DateTime, func, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, func, UniqueConstraint, Float
 from .database import Base
 
 class User(Base):
@@ -15,3 +15,14 @@ class User(Base):
         UniqueConstraint("username"),
         UniqueConstraint("email"),
     )
+
+
+class Calculation(Base):
+    __tablename__ = "calculations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    a = Column(Float, nullable=False)
+    b = Column(Float, nullable=False)
+    type = Column(String(20), nullable=False, index=True)
+    result = Column(Float, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
