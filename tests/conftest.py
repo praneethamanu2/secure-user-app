@@ -49,4 +49,10 @@ app.dependency_overrides[get_db] = override_get_db
 @pytest.fixture
 def client():
     """Return a TestClient for API tests."""
-    return TestClient(app)
+    # Clean up database before each test
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    yield TestClient(app)
+    # Clean up after test
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)

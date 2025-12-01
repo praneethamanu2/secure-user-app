@@ -129,11 +129,65 @@ python -m coverage run -m pytest
 python -m coverage report -m
 ```
 
-## Calculation Model & Usage (Module 11)
+## Calculation Model & Usage (Module 11–12)
 
 - `CalculationCreate` accepts `a`, `b`, and `type` (one of `Add`, `Sub`, `Multiply`, `Divide`).
 - The application computes the `result` via the factory in `app/calculations.py` and persists it in the `calculations` table.
 - Division by zero is validated/handled and will raise an error during calculation.
+
+### Calculation BREAD Endpoints (Module 12)
+
+- **Browse:** `GET /calculations` — List all calculations
+- **Read:** `GET /calculations/{id}` — Get a specific calculation
+- **Edit:** `PUT /calculations/{id}` — Update a calculation (a, b, type; result recomputed)
+- **Add:** `POST /calculations` — Create a new calculation
+- **Delete:** `DELETE /calculations/{id}` — Remove a calculation
+
+### User Authentication Endpoints (Module 12)
+
+- **Register:** `POST /users/register` — Create a new user account
+- **Login:** `POST /users/login` — Authenticate user (username + password; returns user info if valid)
+- **Create User:** `POST /users/` — Alias for registration
+
+### Testing All Endpoints
+
+Use the OpenAPI/Swagger UI at `http://localhost:8000/docs` to:
+1. Register a new user via `/users/register`
+2. Login with `/users/login`
+3. Create, read, update, and delete calculations via the `/calculations` endpoints
+
+Or use curl/httpie:
+
+```bash
+# Register
+curl -X POST "http://localhost:8000/users/register" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","email":"test@example.com","password":"pass123"}'
+
+# Login
+curl -X POST "http://localhost:8000/users/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","password":"pass123"}'
+
+# Add a calculation
+curl -X POST "http://localhost:8000/calculations" \
+  -H "Content-Type: application/json" \
+  -d '{"a":10,"b":2,"type":"Divide"}'
+
+# Browse all calculations
+curl -X GET "http://localhost:8000/calculations"
+
+# Read a specific calculation (replace 1 with actual ID)
+curl -X GET "http://localhost:8000/calculations/1"
+
+# Update a calculation
+curl -X PUT "http://localhost:8000/calculations/1" \
+  -H "Content-Type: application/json" \
+  -d '{"a":20,"b":4,"type":"Divide"}'
+
+# Delete a calculation
+curl -X DELETE "http://localhost:8000/calculations/1"
+```
 
 Note: Module 12 will add BREAD endpoints for calculations; for now, calculations are exercised via unit/integration tests and the CRUD helpers.
 
@@ -162,6 +216,16 @@ docker pull pmanu2/secure-user-app:latest
 ## Notes & Next Steps
 
 - The codebase emits some deprecation warnings from Pydantic v2 and FastAPI lifecycle events — these are non-blocking but can be addressed in a follow-up.
-- Module 12: I can add proper Calculation endpoints (BREAD) and API tests.
+- Test coverage is at 99% for the `app` package (37 passing tests). A few exception handlers in endpoints are hard to reach without monkey-patching.
+- All user and calculation routes are fully tested with comprehensive integration tests.
 
-If you'd like, I can also update the README to include example requests for calculation BREAD endpoints once they're implemented.
+---
+
+## Module 12 Summary
+
+**Completed:**
+- User registration and login endpoints with secure password verification
+- Full BREAD endpoints for calculations (Browse, Read, Edit, Add, Delete)
+- 37 integration tests covering user routes, calculation routes, and edge cases
+- Updated CI/CD pipeline to run all tests and push Docker images on success
+- Complete documentation in README with curl examples

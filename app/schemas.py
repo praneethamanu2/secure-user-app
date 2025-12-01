@@ -17,6 +17,11 @@ class UserRead(UserBase):
         orm_mode = True
 
 
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
 class CalculationCreate(BaseModel):
     a: float
     b: float
