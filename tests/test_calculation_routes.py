@@ -177,16 +177,40 @@ def test_calculation_crud_flow(client):
     assert final_read.status_code == 404
 
 
-def test_add_calculation_with_runtime_error():
-    """Test add calculation error handling by calling directly."""
-    from app import main, crud, schemas, calculations
-    from sqlalchemy.orm import Session
-    from tests import conftest
+def test_add_calculation_with_runtime_error(client, monkeypatch):
+    """Test add calculation error handling when calculation raises ValueError."""
+    import app.crud as crud_module
     
-    db = conftest.TestingSessionLocal()
-    try:
-        # This will test the ZeroDivisionError exception handler in add_calculation
-        # by mocking a calculation that raises ZeroDivisionError at runtime
-        pass
-    finally:
-        db.close()
+    original_create = crud_module.create_calculation
+    
+    def mock_create_calculation_error(db, calc_in):
+        raise ValueError("Test error during calculation")
+    
+    monkeypatch.setattr(crud_module, "create_calculation", mock_create_calculation_error)
+    
+    payload = {"a": 5, "b": 3, "type": "Add"}
+    response = client.post("/calculations", json=payload)
+    assert response.status_code == 400
+    assert "Test error during calculation" in response.json()["detail"]
+
+
+def test_edit_calculation_with_runtime_error(client, monkeypatch):
+    """Test edit calculation error handling when calculation raises ValueError."""
+    import app.calculations as calc_module
+    
+    # First, create a normal calculation
+    payload = {"a": 5, "b": 3, "type": "Add"}
+    create_response = client.post("/calculations", json=payload)
+    calc_id = create_response.json()["id"]
+    
+    original_perform = calc_module.perform_calculation
+    
+    def mock_perform_error(op_type, a, b):
+        raise ValueError("Test error during edit calculation")
+    
+    monkeypatch.setattr(calc_module, "perform_calculation", mock_perform_error)
+    
+    edit_payload = {"a": 10, "b": 5, "type": "Divide"}
+    response = client.put(f"/calculations/{calc_id}", json=edit_payload)
+    assert response.status_code == 400
+    assert "Test error during edit calculation" in response.json()["detail"]
