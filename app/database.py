@@ -3,10 +3,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 
-# This is the correct default database URL for your Docker setup
+# Use PostgreSQL in production/Docker, SQLite for local development
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://app_user:app_password@db:5432/app_db",
+    "sqlite:///./app.db",
 )
 
 engine = create_engine(DATABASE_URL)

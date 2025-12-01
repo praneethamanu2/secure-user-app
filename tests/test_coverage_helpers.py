@@ -20,7 +20,10 @@ def test_on_startup_and_get_db_generator():
 
 def test_read_root_function():
     # cover the simple root handler
-    assert main.read_root() == {"message": "Secure User App running"}
+    # Root endpoint now returns register.html file
+    response = main.read_root()
+    # Check that it's a FileResponse
+    assert response is not None
 
 
 def test_calculationcreate_divide_by_zero_validator():

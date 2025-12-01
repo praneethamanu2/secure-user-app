@@ -22,6 +22,12 @@ class UserLogin(BaseModel):
     password: str
 
 
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: dict  # Contains user info without password
+
+
 class CalculationCreate(BaseModel):
     a: float
     b: float

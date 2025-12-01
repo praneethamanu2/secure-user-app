@@ -9,3 +9,5 @@ coverage
 passlib[bcrypt]
 email-validator
 httpx
+python-jose[cryptography]
+playwright

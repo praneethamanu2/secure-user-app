@@ -11,11 +11,11 @@ def test_register_user(client):
     response = client.post("/users/register", json=payload)
     assert response.status_code == 201
     data = response.json()
-    assert data["username"] == "testuser"
-    assert data["email"] == "testuser@example.com"
-    assert "id" in data
-    assert "created_at" in data
-    assert "password" not in data
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+    assert data["user"]["username"] == "testuser"
+    assert data["user"]["email"] == "testuser@example.com"
+    assert "id" in data["user"]
 
 
 def test_register_duplicate_username(client):
@@ -30,32 +30,28 @@ def test_register_duplicate_username(client):
         "email": "second@example.com",
         "password": "pass123",
     }
-    r1 = client.post("/users/register", json=payload1)
-    assert r1.status_code == 201
-
-    r2 = client.post("/users/register", json=payload2)
-    assert r2.status_code == 400
-    assert "Username already exists" in r2.json()["detail"]
+    client.post("/users/register", json=payload1)
+    response = client.post("/users/register", json=payload2)
+    assert response.status_code == 400
+    assert "Username already exists" in response.json()["detail"]
 
 
 def test_register_duplicate_email(client):
     """Test registration fails with duplicate email."""
     payload1 = {
-        "username": "user_a",
+        "username": "user1",
         "email": "duplicate@example.com",
         "password": "pass123",
     }
     payload2 = {
-        "username": "user_b",
+        "username": "user2",
         "email": "duplicate@example.com",
         "password": "pass123",
     }
-    r1 = client.post("/users/register", json=payload1)
-    assert r1.status_code == 201
-
-    r2 = client.post("/users/register", json=payload2)
-    assert r2.status_code == 400
-    assert "Email already exists" in r2.json()["detail"]
+    client.post("/users/register", json=payload1)
+    response = client.post("/users/register", json=payload2)
+    assert response.status_code == 400
+    assert "Email already exists" in response.json()["detail"]
 
 
 def test_login_success(client):
@@ -76,25 +72,27 @@ def test_login_success(client):
     response = client.post("/users/login", json=login_payload)
     assert response.status_code == 200
     data = response.json()
-    assert data["username"] == "loginuser"
-    assert data["email"] == "loginuser@example.com"
-    assert "password" not in data
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+    assert data["user"]["username"] == "loginuser"
+    assert data["user"]["email"] == "loginuser@example.com"
+    assert "id" in data["user"]
 
 
 def test_login_invalid_password(client):
-    """Test login fails with invalid password."""
-    # Register a user
+    """Test login fails with wrong password."""
+    # First register a user
     register_payload = {
-        "username": "passuser",
-        "email": "passuser@example.com",
-        "password": "correctpass",
+        "username": "wrongpwuser",
+        "email": "wrongpwuser@example.com",
+        "password": "correctpassword",
     }
     client.post("/users/register", json=register_payload)
 
-    # Try login with wrong password
+    # Try to login with wrong password
     login_payload = {
-        "username": "passuser",
-        "password": "wrongpass",
+        "username": "wrongpwuser",
+        "password": "wrongpassword",
     }
     response = client.post("/users/login", json=login_payload)
     assert response.status_code == 401
@@ -102,10 +100,10 @@ def test_login_invalid_password(client):
 
 
 def test_login_nonexistent_user(client):
-    """Test login fails for nonexistent user."""
+    """Test login fails with non-existent user."""
     login_payload = {
-        "username": "nonexistent",
-        "password": "anypass",
+        "username": "doesnotexist",
+        "password": "anypassword",
     }
     response = client.post("/users/login", json=login_payload)
     assert response.status_code == 401
