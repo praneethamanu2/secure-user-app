@@ -29,9 +29,30 @@ def server():
         stderr=subprocess.PIPE
     )
     
-    # Wait for server to start
-    time.sleep(3)
-    
+    # Wait for server to start by polling the register page
+    import urllib.request
+    started = False
+    timeout_seconds = 30
+    start_time = time.time()
+    url = "http://127.0.0.1:8000/register.html"
+    while time.time() - start_time < timeout_seconds:
+        try:
+            with urllib.request.urlopen(url, timeout=1) as resp:
+                if resp.status == 200:
+                    started = True
+                    break
+        except Exception:
+            time.sleep(0.5)
+
+    if not started:
+        # Capture server stderr for debugging
+        try:
+            out, err = process.communicate(timeout=1)
+        except Exception:
+            process.kill()
+            out, err = b"", b""
+        raise RuntimeError(f"Server did not start within {timeout_seconds}s. Stderr:\n{err.decode(errors='ignore')}")
+
     yield process
     
     # Stop the server
@@ -64,11 +85,11 @@ def test_register_user_success(server, browser):
         # Submit form
         page.click('button[type="submit"]')
         
-        # Wait for success message or redirect
-        page.wait_for_function(lambda: page.url != "http://127.0.0.1:8000/register.html", timeout=5000)
+        # Wait for redirect to dashboard (success)
+        page.wait_for_url("**/dashboard.html", timeout=5000)
         
         # Verify redirect happened (success)
-        assert page.url == "http://127.0.0.1:8000/dashboard.html" or "success" in page.content().lower()
+        assert page.url.endswith("/dashboard.html") or "success" in page.content().lower()
         
     finally:
         page.close()
@@ -90,10 +111,8 @@ def test_register_user_invalid_email(server, browser):
         # Submit form
         page.click('button[type="submit"]')
         
-        # Wait a bit for client-side validation
-        time.sleep(1)
-        
-        # Check for error message
+        # Wait for client-side validation error to appear
+        page.wait_for_selector('.error-message.show', timeout=2000)
         error_messages = page.query_selector_all('.error-message.show')
         assert len(error_messages) > 0, "Expected validation error to be shown"
         
@@ -176,8 +195,8 @@ def test_login_user_success(server, browser):
         page.fill('input[name="confirmPassword"]', password)
         page.click('button[type="submit"]')
         
-        # Wait for redirect to dashboard
-        page.wait_for_function(lambda: "dashboard" in page.url, timeout=5000)
+        # Wait for redirect to dashboard after registration
+        page.wait_for_url("**/dashboard.html", timeout=5000)
         
         # Now test login on a new page
         page2 = browser.new_page()
@@ -188,7 +207,7 @@ def test_login_user_success(server, browser):
         page2.click('button[type="submit"]')
         
         # Wait for redirect
-        page2.wait_for_function(lambda: "dashboard" in page2.url, timeout=5000)
+        page2.wait_for_url("**/dashboard.html", timeout=5000)
         
         # Verify we're redirected to dashboard
         assert "dashboard" in page2.url
