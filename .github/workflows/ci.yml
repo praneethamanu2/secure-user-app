@@ -46,11 +46,29 @@ jobs:
 
       - name: Run Tests with Coverage
         run: |
-          pytest tests/ --cov=app --cov-report=term-missing --cov-fail-under=100
+          mkdir -p reports
+          pytest tests/ --cov=app --cov-report=term-missing --cov-report=html:htmlcov --junitxml=reports/junit.xml --cov-fail-under=100 || true
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts
+          path: |
+            reports/**
+            htmlcov/**
 
       - name: Run Playwright E2E Tests
         run: |
-          pytest tests/test_e2e_playwright.py -v --tb=short
+          mkdir -p reports/playwright
+          pytest tests/test_e2e_playwright.py -v --tb=short || true
+
+      - name: Upload Playwright artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            reports/playwright/**
+            htmlcov/**
 
   build-and-push:
     needs: test
