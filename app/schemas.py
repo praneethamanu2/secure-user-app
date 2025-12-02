@@ -1,5 +1,5 @@
 # app/schemas.py
-from pydantic import BaseModel, EmailStr, constr, validator
+from pydantic import BaseModel, EmailStr, constr, field_validator, ConfigDict
 from datetime import datetime
 
 class UserBase(BaseModel):
@@ -13,8 +13,7 @@ class UserRead(UserBase):
     id: int
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserLogin(BaseModel):
@@ -33,17 +32,21 @@ class CalculationCreate(BaseModel):
     b: float
     type: str
 
-    @validator("type")
+    @field_validator("type")
     def validate_type(cls, v):
         allowed = {"Add", "Sub", "Multiply", "Divide"}
         if v not in allowed:
             raise ValueError(f"type must be one of {allowed}")
         return v
 
-    @validator("b")
-    def validate_divisor(cls, v, values):
-        # if type indicates division, ensure b is not zero
-        t = values.get("type")
+    @field_validator("b", mode="after")
+    def validate_divisor(cls, v, info):
+        # Support both pydantic v2 `info` object and older tests
+        # that call the function with a plain dict for values.
+        if isinstance(info, dict):
+            t = info.get("type")
+        else:
+            t = getattr(info, "data", {}) and info.data.get("type") or None
         if t == "Divide" and v == 0:
             raise ValueError("Division by zero is not allowed")
         return v
@@ -57,5 +60,4 @@ class CalculationRead(BaseModel):
     result: float | None = None
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
