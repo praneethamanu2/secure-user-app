@@ -43,6 +43,11 @@ def get_login():
     static_dir = Path(__file__).parent / "static"
     return FileResponse(static_dir / "login.html")
 
+@app.get("/dashboard.html")
+def get_dashboard():
+    static_dir = Path(__file__).parent / "static"
+    return FileResponse(static_dir / "dashboard.html")
+
 @app.post("/users/", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     if crud.get_user_by_username(db, user_in.username):
