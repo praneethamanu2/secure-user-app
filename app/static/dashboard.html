@@ -28,8 +28,39 @@
       </section>
 
       <section style="margin-top:1rem">
-        <button id="fetchProtected">Fetch protected calculations</button>
-        <div id="protectedResult" style="margin-top:0.75rem"></div>
+        <h3>Your Calculations</h3>
+        <div id="calculationsWrapper">
+          <button id="refreshBtn">Refresh</button>
+          <table id="calculationsTable" style="width:100%; margin-top:0.75rem; border-collapse:collapse">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:6px">ID</th>
+                <th style="text-align:left; padding:6px">A</th>
+                <th style="text-align:left; padding:6px">B</th>
+                <th style="text-align:left; padding:6px">Type</th>
+                <th style="text-align:left; padding:6px">Result</th>
+                <th style="text-align:left; padding:6px">Created</th>
+              </tr>
+            </thead>
+            <tbody id="calculationsBody"></tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:1rem">
+          <h4>Create Calculation</h4>
+          <div style="display:flex; gap:8px; align-items:center">
+            <input id="inputA" type="number" step="any" placeholder="a" />
+            <input id="inputB" type="number" step="any" placeholder="b" />
+            <select id="inputType">
+              <option value="Add">Add</option>
+              <option value="Sub">Sub</option>
+              <option value="Multiply">Multiply</option>
+              <option value="Divide">Divide</option>
+            </select>
+            <button id="createCalc">Create</button>
+          </div>
+          <div id="createMsg" style="margin-top:0.5rem"></div>
+        </div>
       </section>
     </div>
 
@@ -38,11 +69,47 @@
         try {
           const userJson = localStorage.getItem('user');
           const token = localStorage.getItem('token');
+          if (!token) {
+            // not logged in, send to login
+            window.location.href = '/login.html';
+            return null;
+          }
           const user = userJson ? JSON.parse(userJson) : null;
           document.getElementById('username').textContent = user?.email || user?.username || '(unknown)';
           document.getElementById('token').textContent = token || '(none)';
+          return token;
         } catch (err) {
           console.error('loadUser error', err);
+          return null;
+        }
+      }
+
+      async function fetchCalculations(token) {
+        const body = document.getElementById('calculationsBody');
+        body.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+        try {
+          const res = await fetch('/calculations', { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!res.ok) {
+            body.innerHTML = `<tr><td colspan="6">Error: ${res.status} ${await res.text()}</td></tr>`;
+            return;
+          }
+          const data = await res.json();
+          if (!Array.isArray(data) || data.length === 0) {
+            body.innerHTML = '<tr><td colspan="6">No calculations</td></tr>';
+            return;
+          }
+          body.innerHTML = data.map(c => `
+            <tr>
+              <td style="padding:6px">${c.id}</td>
+              <td style="padding:6px">${c.a}</td>
+              <td style="padding:6px">${c.b}</td>
+              <td style="padding:6px">${c.type}</td>
+              <td style="padding:6px">${c.result ?? ''}</td>
+              <td style="padding:6px">${c.created_at}</td>
+            </tr>
+          `).join('');
+        } catch (err) {
+          body.innerHTML = `<tr><td colspan="6">Fetch error: ${err}</td></tr>`;
         }
       }
 
@@ -52,28 +119,46 @@
         window.location.href = '/login.html';
       });
 
-      document.getElementById('fetchProtected').addEventListener('click', async () => {
+      document.getElementById('refreshBtn').addEventListener('click', () => {
         const token = localStorage.getItem('token');
-        const out = document.getElementById('protectedResult');
-        if (!token) {
-          out.textContent = 'No token present. Please login first.';
-          return;
-        }
-        out.textContent = 'Loading...';
+        if (!token) return window.location.href = '/login.html';
+        fetchCalculations(token);
+      });
+
+      document.getElementById('createCalc').addEventListener('click', async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return window.location.href = '/login.html';
+        const a = parseFloat(document.getElementById('inputA').value || '0');
+        const b = parseFloat(document.getElementById('inputB').value || '0');
+        const type = document.getElementById('inputType').value;
+        const msg = document.getElementById('createMsg');
+        msg.textContent = 'Creating...';
         try {
-          const res = await fetch('/calculations', { headers: { 'Authorization': 'Bearer ' + token } });
+          const res = await fetch('/calculations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ a, b, type })
+          });
           if (!res.ok) {
-            out.textContent = 'Error: ' + res.status + ' ' + (await res.text());
+            const txt = await res.text();
+            msg.textContent = `Error: ${res.status} ${txt}`;
             return;
           }
-          const data = await res.json();
-          out.textContent = JSON.stringify(data, null, 2);
+          const created = await res.json();
+          msg.textContent = 'Created ✓';
+          // refresh list
+          fetchCalculations(token);
         } catch (err) {
-          out.textContent = 'Fetch error: ' + err;
+          msg.textContent = 'Create error: ' + err;
         }
       });
 
-      loadUser();
+      // initialize
+      const token = loadUser();
+      if (token) fetchCalculations(token);
     </script>
   </body>
 </html>

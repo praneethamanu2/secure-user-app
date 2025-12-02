@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from pathlib import Path
@@ -9,7 +10,14 @@ from .database import Base, engine, SessionLocal
 from . import models, schemas, crud, calculations
 from .security import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 
-app = FastAPI()
+# Add security scheme for Swagger Authorize button
+security = HTTPBearer()
+
+app = FastAPI(
+    title="Secure User App",
+    description="JWT-authenticated calculations API with user registration/login",
+    version="1.0.0"
+)
 
 # Mount static files at /static and also serve HTML from root
 static_dir = Path(__file__).parent / "static"
