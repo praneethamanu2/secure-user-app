@@ -214,6 +214,18 @@ The codebase is now well-structured, thoroughly tested, and ready for the endpoi
 ---
 
 **Author:** Development Team  
-**Date:** November 24, 2025  
+**Date:** December 10, 2025  
 **Project:** secure-user-app (Module 11)
+
+---
+
+## Deployment & Docker Hub — Reflection
+
+During the CI/CD integration and deployment phase we encountered a few deployment-specific challenges worth highlighting:
+
+- Secrets and permissions: Pushing images to Docker Hub from GitHub Actions required creating and configuring `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets. Ensuring secrets are scoped correctly and not exposed in logs was important.
+- Image tagging and reproducibility: We standardized on `latest` for CI pushes but recommend adding a semantic tag (e.g., commit SHA or CI build number) for traceability in production flows.
+- Runner environment differences: The GitHub Actions runner uses ephemeral hosts; network and port mapping differ from local Docker Compose. This required changing service references to `localhost` and adding health checks to ensure the DB was ready before tests ran.
+
+Overall the deployment flow now reliably builds, tests, and pushes an image to Docker Hub when tests pass. For production usage, consider adding image signing, multi-arch builds, and a deployment stage that deploys the image to a staging environment for manual QA checks.
 

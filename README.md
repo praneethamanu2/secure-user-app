@@ -96,6 +96,16 @@ Access the API
 - Root endpoint: `http://localhost:8000/`
 - Interactive API docs (Swagger UI): `http://localhost:8000/docs`
 
+## Quick start — run locally (no Docker)
+
+If you prefer to run the app locally without Docker, use your virtual environment and start uvicorn:
+
+```bash
+source .venv/bin/activate
+uvicorn app.main:app --reload --port 8000
+# then open http://127.0.0.1:8000/docs or the static pages under /static
+```
+
 ## How to Run Tests Locally
 
 Local tests use a SQLite test database by default (configured in `tests/conftest.py` via `TEST_DATABASE_URL`).
@@ -326,6 +336,10 @@ Pull with:
 ```bash
 docker pull pmanu2/secure-user-app:latest
 ```
+
+Docker Hub repository (open in browser):
+
+https://hub.docker.com/r/pmanu2/secure-user-app
 
 ## Notes & Next Steps
 
