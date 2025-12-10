@@ -5,15 +5,39 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Dashboard</title>
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 2rem; }
-      .card { border: 1px solid #e2e8f0; padding: 1rem; border-radius: 8px; max-width: 720px; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+      }
+      .container {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        width: 100%;
+        max-width: 900px;
+        padding: 28px;
+      }
       header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
-      button { padding: 0.5rem 0.75rem; border-radius:6px; border:1px solid #CBD5E1; background:#F8FAFC; cursor:pointer }
-      pre { background:#0f172a; color:#e6edf3; padding:0.75rem; border-radius:6px; overflow:auto }
+      h1 { font-size: 28px; color:#111827 }
+      button { padding: 0.45rem 0.75rem; border-radius:6px; border:1px solid #CBD5E1; background:#F8FAFC; cursor:pointer }
+      .token-box { background:#0f172a; color:#e6edf3; padding:0.75rem; border-radius:6px; overflow:auto }
+      table { width:100%; border-collapse:collapse; margin-top:0.75rem }
+      th, td { padding:8px; text-align:left; border-bottom:1px solid #eef2f7 }
+      .actions button { margin-right:6px }
+      .inline-input { width:80px; padding:6px; border:1px solid #ddd; border-radius:4px }
+      select.inline-select { padding:6px; border-radius:4px }
+      .muted { color:#6b7280 }
+      .row-empty { text-align:center; color:#6b7280 }
     </style>
   </head>
-  <body>
-    <div class="card">
+    <body>
+    <div class="container">
       <header>
         <h1>Dashboard</h1>
         <div>
@@ -24,22 +48,23 @@
       <section>
         <p><strong>Signed in as:</strong> <span id="username">(not signed in)</span></p>
         <p><strong>Access token:</strong></p>
-        <pre id="token">(none)</pre>
+        <pre id="token" class="token-box">(none)</pre>
       </section>
 
       <section style="margin-top:1rem">
         <h3>Your Calculations</h3>
         <div id="calculationsWrapper">
           <button id="refreshBtn">Refresh</button>
-          <table id="calculationsTable" style="width:100%; margin-top:0.75rem; border-collapse:collapse">
+          <table id="calculationsTable">
             <thead>
               <tr>
-                <th style="text-align:left; padding:6px">ID</th>
-                <th style="text-align:left; padding:6px">A</th>
-                <th style="text-align:left; padding:6px">B</th>
-                <th style="text-align:left; padding:6px">Type</th>
-                <th style="text-align:left; padding:6px">Result</th>
-                <th style="text-align:left; padding:6px">Created</th>
+                <th>ID</th>
+                <th>A</th>
+                <th>B</th>
+                <th>Type</th>
+                <th>Result</th>
+                <th>Created</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="calculationsBody"></tbody>
@@ -49,9 +74,9 @@
         <div style="margin-top:1rem">
           <h4>Create Calculation</h4>
           <div style="display:flex; gap:8px; align-items:center">
-            <input id="inputA" type="number" step="any" placeholder="a" />
-            <input id="inputB" type="number" step="any" placeholder="b" />
-            <select id="inputType">
+            <input id="inputA" class="inline-input" type="number" step="any" placeholder="a" />
+            <input id="inputB" class="inline-input" type="number" step="any" placeholder="b" />
+            <select id="inputType" class="inline-select">
               <option value="Add">Add</option>
               <option value="Sub">Sub</option>
               <option value="Multiply">Multiply</option>
@@ -86,30 +111,120 @@
 
       async function fetchCalculations(token) {
         const body = document.getElementById('calculationsBody');
-        body.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+        body.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
         try {
           const res = await fetch('/calculations', { headers: { 'Authorization': 'Bearer ' + token } });
           if (!res.ok) {
-            body.innerHTML = `<tr><td colspan="6">Error: ${res.status} ${await res.text()}</td></tr>`;
+            body.innerHTML = `<tr><td colspan="7">Error: ${res.status} ${await res.text()}</td></tr>`;
             return;
           }
           const data = await res.json();
           if (!Array.isArray(data) || data.length === 0) {
-            body.innerHTML = '<tr><td colspan="6">No calculations</td></tr>';
+            body.innerHTML = '<tr><td class="row-empty" colspan="7">No calculations</td></tr>';
             return;
           }
-          body.innerHTML = data.map(c => `
-            <tr>
-              <td style="padding:6px">${c.id}</td>
-              <td style="padding:6px">${c.a}</td>
-              <td style="padding:6px">${c.b}</td>
-              <td style="padding:6px">${c.type}</td>
-              <td style="padding:6px">${c.result ?? ''}</td>
-              <td style="padding:6px">${c.created_at}</td>
-            </tr>
-          `).join('');
+          body.innerHTML = data.map(c => renderRow(c)).join('');
         } catch (err) {
-          body.innerHTML = `<tr><td colspan="6">Fetch error: ${err}</td></tr>`;
+          body.innerHTML = `<tr><td colspan="7">Fetch error: ${err}</td></tr>`;
+        }
+      }
+
+      function renderRow(c) {
+        return `
+          <tr id="row-${c.id}">
+            <td>${c.id}</td>
+            <td data-a>${c.a}</td>
+            <td data-b>${c.b}</td>
+            <td data-type>${c.type}</td>
+            <td>${c.result ?? ''}</td>
+            <td class="muted">${c.created_at}</td>
+            <td class="actions">
+              <button onclick="startEdit(${c.id})">Edit</button>
+              <button onclick="deleteCalc(${c.id})">Delete</button>
+            </td>
+          </tr>
+        `;
+      }
+
+      function startEdit(id) {
+        const row = document.getElementById('row-' + id);
+        if (!row) return;
+        const a = row.querySelector('[data-a]').textContent;
+        const b = row.querySelector('[data-b]').textContent;
+        const type = row.querySelector('[data-type]').textContent;
+        row.innerHTML = `
+          <td>${id}</td>
+          <td><input class="inline-input" id="edit-a-${id}" type="number" step="any" value="${a}" /></td>
+          <td><input class="inline-input" id="edit-b-${id}" type="number" step="any" value="${b}" /></td>
+          <td>
+            <select id="edit-type-${id}" class="inline-select">
+              <option value="Add" ${type==='Add'?'selected':''}>Add</option>
+              <option value="Sub" ${type==='Sub'?'selected':''}>Sub</option>
+              <option value="Multiply" ${type==='Multiply'?'selected':''}>Multiply</option>
+              <option value="Divide" ${type==='Divide'?'selected':''}>Divide</option>
+            </select>
+          </td>
+          <td id="edit-result-${id}"></td>
+          <td class="muted">(editing)</td>
+          <td class="actions">
+            <button onclick="saveEdit(${id})">Save</button>
+            <button onclick="cancelEdit(${id})">Cancel</button>
+          </td>
+        `;
+      }
+
+      async function saveEdit(id) {
+        const token = localStorage.getItem('token');
+        if (!token) return window.location.href = '/login.html';
+        const a = parseFloat(document.getElementById(`edit-a-${id}`).value || '0');
+        const b = parseFloat(document.getElementById(`edit-b-${id}`).value || '0');
+        const type = document.getElementById(`edit-type-${id}`).value;
+        const resultCell = document.getElementById(`edit-result-${id}`);
+        resultCell.textContent = 'Saving...';
+        try {
+          const res = await fetch(`/calculations/${id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ a, b, type })
+          });
+          if (!res.ok) {
+            const txt = await res.text();
+            resultCell.textContent = `Error: ${res.status} ${txt}`;
+            return;
+          }
+          const updated = await res.json();
+          // re-render full list to keep things simple
+          fetchCalculations(token);
+        } catch (err) {
+          resultCell.textContent = 'Save error: ' + err;
+        }
+      }
+
+      function cancelEdit(id) {
+        const token = localStorage.getItem('token');
+        if (!token) return window.location.href = '/login.html';
+        fetchCalculations(token);
+      }
+
+      async function deleteCalc(id) {
+        if (!confirm('Delete calculation #' + id + '?')) return;
+        const token = localStorage.getItem('token');
+        if (!token) return window.location.href = '/login.html';
+        try {
+          const res = await fetch(`/calculations/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token }
+          });
+          if (res.status === 204) {
+            fetchCalculations(token);
+          } else {
+            alert('Delete failed: ' + res.status);
+          }
+        } catch (err) {
+          alert('Delete error: ' + err);
         }
       }
 
