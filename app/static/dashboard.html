@@ -201,7 +201,8 @@
           }
           const updated = await res.json();
           // re-render full list to keep things simple
-          fetchCalculations(token);
+              fetchCalculations(token);
+              fetchStats(token);
         } catch (err) {
           resultCell.textContent = 'Save error: ' + err;
         }
@@ -224,6 +225,7 @@
           });
           if (res.status === 204) {
             fetchCalculations(token);
+            fetchStats(token);
           } else {
             alert('Delete failed: ' + res.status);
           }
@@ -269,7 +271,8 @@
           const created = await res.json();
           msg.textContent = 'Created ✓';
           // refresh list
-          fetchCalculations(token);
+            fetchCalculations(token);
+            fetchStats(token);
         } catch (err) {
           msg.textContent = 'Create error: ' + err;
         }
