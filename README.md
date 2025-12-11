@@ -1,5 +1,8 @@
 # Secure User App – FastAPI + PostgreSQL + Docker + CI/CD + JWT + E2E Testing
 
+[![Docker Pulls](https://img.shields.io/docker/pulls/pmanu2/secure-user-app.svg)](https://hub.docker.com/r/pmanu2/secure-user-app)
+
+
 This project implements a **secure user registration and authentication system** using FastAPI, SQLAlchemy, Pydantic, JWT tokens, and Playwright for end-to-end testing.  
 It includes password hashing, JWT token generation, front-end registration/login pages with client-side validation, Playwright E2E tests, automated tests, Dockerization, and a CI/CD pipeline that builds and pushes images to Docker Hub.
 
