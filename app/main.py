@@ -109,6 +109,12 @@ def add_calculation(calc_in: schemas.CalculationCreate, db: Session = Depends(ge
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@app.get("/calculations/stats", response_model=schemas.CalculationStats)
+def calculations_stats(db: Session = Depends(get_db)):
+    """Return aggregate statistics about calculations."""
+    return crud.get_calculation_stats(db)
+
+
 @app.get("/calculations", response_model=list[schemas.CalculationRead])
 def browse_calculations(db: Session = Depends(get_db)):
     """Browse (GET) all calculations."""

@@ -61,3 +61,13 @@ class CalculationRead(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CalculationStats(BaseModel):
+    total_count: int
+    avg_a: float | None = None
+    avg_b: float | None = None
+    avg_result: float | None = None
+    counts_by_type: dict[str, int] = {}
+
+    model_config = ConfigDict(from_attributes=True)

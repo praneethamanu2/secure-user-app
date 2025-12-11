@@ -1,5 +1,6 @@
 # app/crud.py
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from . import models, schemas
 from .security import hash_password
 from . import calculations
@@ -41,3 +42,27 @@ def create_calculation(db: Session, calc_in: CalculationCreate):
 
 def get_calculation(db: Session, calc_id: int):
     return db.query(Calculation).filter(Calculation.id == calc_id).first()
+
+
+def get_calculation_stats(db: Session):
+    """Return simple aggregate statistics about calculations."""
+    total, avg_a, avg_b, avg_result = db.query(
+        func.count(Calculation.id),
+        func.avg(Calculation.a),
+        func.avg(Calculation.b),
+        func.avg(Calculation.result),
+    ).one()
+
+    # counts by type
+    types = ["Add", "Sub", "Multiply", "Divide"]
+    counts = {}
+    for t in types:
+        counts[t] = db.query(func.count(Calculation.id)).filter(Calculation.type == t).scalar() or 0
+
+    return {
+        "total_count": int(total or 0),
+        "avg_a": float(avg_a) if avg_a is not None else None,
+        "avg_b": float(avg_b) if avg_b is not None else None,
+        "avg_result": float(avg_result) if avg_result is not None else None,
+        "counts_by_type": counts,
+    }

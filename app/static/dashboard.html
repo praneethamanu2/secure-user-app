@@ -53,6 +53,10 @@
 
       <section style="margin-top:1rem">
         <h3>Your Calculations</h3>
+        <div id="statsPanel" style="margin-bottom:0.75rem">
+          <strong>Summary:</strong>
+          <div id="statsContent" class="muted">Loading stats...</div>
+        </div>
         <div id="calculationsWrapper">
           <button id="refreshBtn">Refresh</button>
           <table id="calculationsTable">
@@ -273,7 +277,26 @@
 
       // initialize
       const token = loadUser();
-      if (token) fetchCalculations(token);
+      if (token) {
+        fetchCalculations(token);
+        fetchStats(token);
+      }
+
+      async function fetchStats(token) {
+        const container = document.getElementById('statsContent');
+        container.textContent = 'Loading stats...';
+        try {
+          const res = await fetch('/calculations/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+          if (!res.ok) {
+            container.textContent = `Error: ${res.status}`;
+            return;
+          }
+          const s = await res.json();
+          container.innerHTML = `Total: <strong>${s.total_count}</strong> &middot; Avg A: <strong>${s.avg_a ?? '-'} </strong> &middot; Avg B: <strong>${s.avg_b ?? '-'} </strong> &middot; Avg Result: <strong>${s.avg_result ?? '-'}</strong>`;
+        } catch (err) {
+          container.textContent = 'Stats fetch error: ' + err;
+        }
+      }
     </script>
   </body>
 </html>
