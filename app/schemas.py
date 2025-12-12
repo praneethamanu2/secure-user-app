@@ -1,5 +1,6 @@
 # app/schemas.py
 from pydantic import BaseModel, EmailStr, constr, field_validator, ConfigDict
+from typing import Optional
 from datetime import datetime
 
 class UserBase(BaseModel):
@@ -14,6 +15,17 @@ class UserRead(UserBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserUpdate(BaseModel):
+    username: Optional[constr(min_length=3, max_length=50)] = None
+    email: Optional[EmailStr] = None
+
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: constr(min_length=6)
+
 
 
 class UserLogin(BaseModel):

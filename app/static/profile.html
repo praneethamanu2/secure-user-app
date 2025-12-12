@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Profile</title>
+    <style>
+      body{font-family:system-ui, -apple-system, 'Segoe UI', Roboto, Arial;margin:20px}
+      .card{max-width:640px;margin:0 auto;background:#fff;padding:20px;border-radius:8px}
+      label{display:block;margin-top:10px}
+      input{width:100%;padding:8px;margin-top:6px;border:1px solid #ddd;border-radius:4px}
+      button{margin-top:12px;padding:8px 12px}
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Your Profile</h2>
+      <form id="profileForm">
+        <label>Username
+          <input id="username" name="username" />
+        </label>
+        <label>Email
+          <input id="email" name="email" />
+        </label>
+        <button id="saveProfile" type="button">Save</button>
+      </form>
+
+      <hr />
+      <h3>Change Password</h3>
+      <form id="passwordForm">
+        <label>Current password
+          <input id="currentPassword" type="password" />
+        </label>
+        <label>New password
+          <input id="newPassword" type="password" />
+        </label>
+        <button id="changePassword" type="button">Change password</button>
+      </form>
+
+      <div id="msg" style="margin-top:12px;color:green"></div>
+    </div>
+
+    <script>
+      function loadUser() {
+        const token = localStorage.getItem('token');
+        const user = localStorage.getItem('user');
+        if (!token) return null;
+        return { token, user: user ? JSON.parse(user) : null };
+      }
+
+      async function fetchProfile() {
+        const ctx = loadUser();
+        if (!ctx) return window.location.href = '/login.html';
+        const res = await fetch('/users/me', { headers: { 'Authorization': 'Bearer ' + ctx.token } });
+        if (!res.ok) return alert('Failed to load profile');
+        const user = await res.json();
+        document.getElementById('username').value = user.username || '';
+        document.getElementById('email').value = user.email || '';
+      }
+
+      document.getElementById('saveProfile').addEventListener('click', async () => {
+        const ctx = loadUser();
+        if (!ctx) return window.location.href = '/login.html';
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const res = await fetch('/users/me', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + ctx.token },
+          body: JSON.stringify({ username, email })
+        });
+        if (!res.ok) return alert('Save failed');
+        const updated = await res.json();
+        localStorage.setItem('user', JSON.stringify({ id: updated.id, username: updated.username, email: updated.email }));
+        document.getElementById('msg').textContent = 'Profile saved';
+      });
+
+      document.getElementById('changePassword').addEventListener('click', async () => {
+        const ctx = loadUser();
+        if (!ctx) return window.location.href = '/login.html';
+        const current = document.getElementById('currentPassword').value;
+        const next = document.getElementById('newPassword').value;
+        const res = await fetch('/users/me/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + ctx.token },
+          body: JSON.stringify({ current_password: current, new_password: next })
+        });
+        if (!res.ok) return alert('Password change failed: ' + (await res.text()));
+        document.getElementById('msg').textContent = 'Password changed — please re-login';
+        // clear token to force re-login
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setTimeout(() => window.location.href = '/login.html', 1200);
+      });
+
+      fetchProfile();
+    </script>
+  </body>
+</html>

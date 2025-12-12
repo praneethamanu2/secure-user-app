@@ -25,6 +25,24 @@ def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
 
+def update_user(db: Session, user: models.User, username: str | None = None, email: str | None = None):
+    if username:
+        user.username = username
+    if email:
+        user.email = email
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def change_user_password(db: Session, user: models.User, new_password: str):
+    # hash password and update
+    user.password_hash = hash_password(new_password)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 def create_calculation(db: Session, calc_in: CalculationCreate):
     # compute result using the calculation factory
     result = calculations.perform_calculation(calc_in.type, calc_in.a, calc_in.b)

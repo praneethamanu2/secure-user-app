@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -9,6 +9,8 @@ from pathlib import Path
 from .database import Base, engine, SessionLocal
 from . import models, schemas, crud, calculations
 from .security import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from .security import SECRET_KEY, ALGORITHM
+from jose import JWTError, jwt
 
 # Add security scheme for Swagger Authorize button
 security = HTTPBearer()
@@ -35,6 +37,27 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)):
+    """Dependency to get the current user from the Authorization header."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    try:
+        scheme, token = authorization.split()
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Invalid token payload")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user = crud.get_user_by_username(db, username)
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
 
 @app.get("/")
 def read_root():
@@ -95,6 +118,31 @@ def login_user(user_in: schemas.UserLogin, db: Session = Depends(get_db)):
         "token_type": "bearer",
         "user": {"id": user.id, "username": user.username, "email": user.email}
     }
+
+
+@app.get("/users/me", response_model=schemas.UserRead)
+def read_current_user(current_user=Depends(get_current_user)):
+    return current_user
+
+
+@app.put("/users/me", response_model=schemas.UserRead)
+def update_profile(update: schemas.UserUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    # prevent duplicate username/email
+    if update.username and crud.get_user_by_username(db, update.username) and update.username != current_user.username:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    if update.email and crud.get_user_by_email(db, update.email) and update.email != current_user.email:
+        raise HTTPException(status_code=400, detail="Email already exists")
+    user = crud.update_user(db, current_user, username=update.username, email=update.email)
+    return user
+
+
+@app.post("/users/me/change-password")
+def change_password(payload: schemas.PasswordChange, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    # verify current password
+    if not verify_password(payload.current_password, current_user.password_hash):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    crud.change_user_password(db, current_user, payload.new_password)
+    return {"detail": "Password changed"}
 
 
 # Calculation BREAD Endpoints
