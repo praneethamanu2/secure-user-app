@@ -52,7 +52,17 @@
         const ctx = loadUser();
         if (!ctx) return window.location.href = '/login.html';
         const res = await fetch('/users/me', { headers: { 'Authorization': 'Bearer ' + ctx.token } });
-        if (!res.ok) return alert('Failed to load profile');
+        if (!res.ok) {
+          // if unauthorized, redirect to login so user can re-login
+          if (res.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            return window.location.href = '/login.html';
+          }
+          // otherwise show a helpful alert
+          const text = await res.text().catch(() => '');
+          return alert('Failed to load profile: ' + (text || res.status));
+        }
         const user = await res.json();
         document.getElementById('username').value = user.username || '';
         document.getElementById('email').value = user.email || '';

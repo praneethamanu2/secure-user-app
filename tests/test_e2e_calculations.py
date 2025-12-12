@@ -55,6 +55,9 @@ def test_calculation_bread_flow(server, browser):
         # We assume table rows render with Edit buttons; click first Edit.
         edit_buttons = page.query_selector_all('button:has-text("Edit")')
         assert len(edit_buttons) > 0
+        # determine which row we're editing so we can verify deletion later
+        row_el = edit_buttons[0]
+        row_id = row_el.evaluate("el => el.closest('tr') && el.closest('tr').id")
         edit_buttons[0].click()
         page.wait_for_timeout(200)
         # change values
@@ -69,8 +72,10 @@ def test_calculation_bread_flow(server, browser):
         page.wait_for_timeout(800)
         page.screenshot(path=screenshot_path('after_edit'))
 
-        # verify updated result 6 (30/5)
-        assert '6' in page.content()
+        # verify updated result 6 (30/5) within the edited row
+        edited_row = page.query_selector(f'#{row_id}')
+        assert edited_row is not None
+        assert '6' in edited_row.inner_text()
 
         # Delete the edited calculation (click corresponding Delete)
         delete_buttons = page.query_selector_all('button:has-text("Delete")')
@@ -90,8 +95,8 @@ def test_calculation_bread_flow(server, browser):
         page.wait_for_timeout(500)
         page.screenshot(path=screenshot_path('after_delete'))
 
-        # verify removed: the previously found values should not be present
-        assert '30' not in page.content() or '6' not in page.content()
+        # verify removed: the edited row should be gone
+        assert page.query_selector(f'#{row_id}') is None
 
     finally:
         page.close()

@@ -72,11 +72,11 @@ def server():
 
     process = subprocess.Popen(
         [
-            "python", "-m", "uvicorn",
+            sys.executable, "-m", "uvicorn",
             "app.main:app",
             "--host", "127.0.0.1",
             "--port", "8000",
-            "--reload"
+            # Do not use --reload in tests; it spawns a watcher process.
         ],
         env=env,
         stdout=subprocess.PIPE,
