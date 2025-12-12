@@ -21,6 +21,10 @@ def create_user(db: Session, user_in: schemas.UserCreate):
 def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
 
+
+def get_user_by_id(db: Session, user_id: int):
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
 
@@ -73,6 +77,7 @@ def get_calculation_stats(db: Session):
 
     # counts by type
     types = ["Add", "Sub", "Multiply", "Divide"]
+    types = ["Add", "Sub", "Multiply", "Divide", "Power"]
     counts = {}
     for t in types:
         counts[t] = db.query(func.count(Calculation.id)).filter(Calculation.type == t).scalar() or 0
@@ -84,3 +89,10 @@ def get_calculation_stats(db: Session):
         "avg_result": float(avg_result) if avg_result is not None else None,
         "counts_by_type": counts,
     }
+
+
+def get_calculation_history(db: Session, limit: int = 20, offset: int = 0):
+    """Return recent calculations (most recent first) with total count."""
+    total = db.query(func.count(Calculation.id)).scalar() or 0
+    items = db.query(Calculation).order_by(Calculation.created_at.desc()).limit(limit).offset(offset).all()
+    return {"total": int(total), "items": items}

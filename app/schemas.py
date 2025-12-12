@@ -46,7 +46,7 @@ class CalculationCreate(BaseModel):
 
     @field_validator("type")
     def validate_type(cls, v):
-        allowed = {"Add", "Sub", "Multiply", "Divide"}
+        allowed = {"Add", "Sub", "Multiply", "Divide", "Power"}
         if v not in allowed:
             raise ValueError(f"type must be one of {allowed}")
         return v
@@ -81,5 +81,12 @@ class CalculationStats(BaseModel):
     avg_b: float | None = None
     avg_result: float | None = None
     counts_by_type: dict[str, int] = {}
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ReportHistory(BaseModel):
+    total: int
+    items: list[CalculationRead] = []
 
     model_config = ConfigDict(from_attributes=True)

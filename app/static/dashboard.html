@@ -5,321 +5,294 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Dashboard</title>
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
+      :root{
+        --bg1: #0f172a;
+        --accent: #7c3aed;
+        --muted: #6b7280;
+        --card-bg: #ffffff;
+        --soft: #f8fafc;
       }
-      .container {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-        width: 100%;
-        max-width: 900px;
-        padding: 28px;
-      }
-      header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
-      h1 { font-size: 28px; color:#111827 }
-      button { padding: 0.45rem 0.75rem; border-radius:6px; border:1px solid #CBD5E1; background:#F8FAFC; cursor:pointer }
-      .token-box { background:#0f172a; color:#e6edf3; padding:0.75rem; border-radius:6px; overflow:auto }
-      table { width:100%; border-collapse:collapse; margin-top:0.75rem }
-      th, td { padding:8px; text-align:left; border-bottom:1px solid #eef2f7 }
-      .actions button { margin-right:6px }
-      .inline-input { width:80px; padding:6px; border:1px solid #ddd; border-radius:4px }
-      select.inline-select { padding:6px; border-radius:4px }
-      .muted { color:#6b7280 }
-      .row-empty { text-align:center; color:#6b7280 }
+      *{box-sizing:border-box}
+      body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; margin:0; background:linear-gradient(180deg,#eef2ff 0%, #fff 100%); color:#0f172a}
+      .app{max-width:1200px;margin:28px auto;padding:20px}
+      .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+      .brand{display:flex;gap:12px;align-items:center}
+      .brand h1{font-size:20px;margin:0;color:var(--accent)}
+      .user-area{display:flex;align-items:center;gap:12px}
+      #avatarWrapper{position:relative}
+      #avatarImg{width:44px;height:44px;border-radius:50%;cursor:pointer;border:2px solid #eef2ff}
+      .avatar-menu{display:none;position:absolute;right:0;top:54px;background:var(--card-bg);border:1px solid #e6edf3;padding:8px;border-radius:8px;box-shadow:0 8px 24px rgba(2,6,23,0.08);min-width:140px}
+      .avatar-menu button{display:block;width:100%;text-align:left;padding:8px;border:none;background:transparent;cursor:pointer}
+
+      .layout{display:grid;grid-template-columns:320px 1fr;gap:20px}
+      .card{background:var(--card-bg);border-radius:10px;padding:16px;box-shadow:0 6px 18px rgba(15,23,42,0.04)}
+
+      .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+      .stat{padding:12px;border-radius:8px;background:linear-gradient(180deg,#fff,#fbfbff);}
+      .stat h4{margin:0;font-size:12px;color:var(--muted)}
+      .stat p{margin-top:8px;font-size:18px;font-weight:600}
+
+      .controls{display:flex;gap:8px;align-items:center}
+      .controls input[type="number"], .controls select{padding:8px;border-radius:8px;border:1px solid #e6edf3;background:white}
+      .controls input[type="number"]{width:88px}
+      .controls select{min-width:140px}
+      .controls button{background:var(--accent);color:white;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+
+      table{width:100%;border-collapse:collapse;margin-top:12px}
+      th, td{padding:10px;text-align:left;border-bottom:1px solid #f0f4ff}
+      th{font-size:12px;color:var(--muted)}
+      tbody tr:hover{background:#fbfbff}
+
+      .muted{color:var(--muted)}
+
+      /* Modal */
+      .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(2,6,23,0.45);align-items:center;justify-content:center}
+      .modal{background:var(--card-bg);padding:18px;border-radius:10px;min-width:320px;max-width:640px}
+
+      @media (max-width:900px){.layout{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(1,1fr);}}
     </style>
   </head>
-    <body>
-    <div class="container">
-      <header>
-        <h1>Dashboard</h1>
-        <div style="display:flex;gap:8px;align-items:center">
-          <div id="avatarWrapper" style="position:relative">
-            <img id="avatarImg" src="/static/avatar-default.svg" alt="avatar" style="width:40px;height:40px;border-radius:50%;cursor:pointer" />
-            <div id="avatarMenu" style="display:none;position:absolute;right:0;top:48px;background:white;border:1px solid #ddd;padding:8px;border-radius:6px;box-shadow:0 6px 12px rgba(0,0,0,0.08)">
-              <button id="menuProfile">Profile</button>
-              <button id="menuLogout">Logout</button>
+  <body>
+    <div class="app">
+      <div class="topbar">
+        <div class="brand"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="6" fill="#EEF2FF"/><path d="M7 13h10M7 8h10M7 18h6" stroke="#7C3AED" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><h1>Calculations — Dashboard</h1></div>
+        <div class="user-area">
+          <div style="text-align:right">
+            <div style="font-size:12px;color:var(--muted)">Signed in as</div>
+            <div id="username" style="font-weight:600">(not signed in)</div>
+          </div>
+          <div id="avatarWrapper">
+            <img id="avatarImg" src="/static/avatar-default.svg" alt="avatar" />
+            <div id="avatarMenu" class="avatar-menu" role="menu" aria-hidden="true">
+              <button id="menuProfile" role="menuitem">Profile</button>
+              <button id="menuLogout" role="menuitem">Logout</button>
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
-      <section>
-        <p><strong>Signed in as:</strong> <span id="username">(not signed in)</span></p>
-        <p><strong>Access token:</strong></p>
-        <pre id="token" class="token-box">(none)</pre>
-      </section>
-
-      <section style="margin-top:1rem">
-        <h3>Your Calculations</h3>
-        <div id="statsPanel" style="margin-bottom:0.75rem">
-          <strong>Summary:</strong>
-          <div id="statsContent" class="muted">Loading stats...</div>
-        </div>
-        <div id="calculationsWrapper">
-          <button id="refreshBtn">Refresh</button>
-          <table id="calculationsTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>A</th>
-                <th>B</th>
-                <th>Type</th>
-                <th>Result</th>
-                <th>Created</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="calculationsBody"></tbody>
-          </table>
-        </div>
-
-        <div style="margin-top:1rem">
-          <h4>Create Calculation</h4>
-          <div style="display:flex; gap:8px; align-items:center">
-            <input id="inputA" class="inline-input" type="number" step="any" placeholder="a" />
-            <input id="inputB" class="inline-input" type="number" step="any" placeholder="b" />
-            <select id="inputType" class="inline-select">
-              <option value="Add">Add</option>
-              <option value="Sub">Sub</option>
-              <option value="Multiply">Multiply</option>
-              <option value="Divide">Divide</option>
-            </select>
-            <button id="createCalc">Create</button>
+      <div class="layout">
+        <aside>
+          <div class="card">
+            <h3 style="margin:0 0 8px 0">Summary</h3>
+            <div id="statsPanel">
+              <div class="stats-grid">
+                <div class="stat"><h4>Total</h4><p id="statTotal">—</p></div>
+                <div class="stat"><h4>Avg A</h4><p id="statA">—</p></div>
+                <div class="stat"><h4>Avg B</h4><p id="statB">—</p></div>
+                <div class="stat"><h4>Avg Result</h4><p id="statR">—</p></div>
+              </div>
+              <div style="margin-top:12px">
+                <h4 style="margin:6px 0">Recent</h4>
+                <ul id="historyList" style="list-style:none;padding:0;margin:6px 0">
+                  <li class="muted">No recent calculations</li>
+                </ul>
+              </div>
+            </div>
           </div>
-          <div id="createMsg" style="margin-top:0.5rem"></div>
+
+          <div class="card" style="margin-top:12px">
+            <h3 style="margin:0 0 8px 0">Create</h3>
+            <div class="controls">
+              <input id="inputA" type="number" step="any" placeholder="A" />
+              <input id="inputB" type="number" step="any" placeholder="B" />
+              <label style="display:flex;align-items:center;gap:6px">
+                <span class="muted" style="font-size:12px">Op</span>
+                <select id="inputType">
+                  <option value="Add">Add</option>
+                  <option value="Sub">Sub</option>
+                  <option value="Multiply">Multiply</option>
+                  <option value="Divide">Divide</option>
+                  <option value="Power">Power</option>
+                </select>
+              </label>
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px">
+              <button id="createCalc">Create</button>
+              <button id="refreshBtn" style="background:#eef2ff;color:var(--accent);border:1px solid #e6edf3">Refresh</button>
+            </div>
+            <div id="createMsg" style="margin-top:8px;color:green"></div>
+          </div>
+        </aside>
+
+        <main>
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <h3 style="margin:0">Calculations</h3>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input id="search" placeholder="Search type or id..." style="padding:8px;border-radius:8px;border:1px solid #e6edf3" />
+              </div>
+            </div>
+
+            <table aria-live="polite">
+              <thead>
+                <tr><th>ID</th><th>A</th><th>B</th><th>Type</th><th>Result</th><th>Created</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="calculationsBody"><tr><td colspan="7" class="muted">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Modal backdrop -->
+    <div id="modal" class="modal-backdrop" role="dialog" aria-modal="true">
+      <div class="modal" id="modalContent">
+        <h3 id="modalTitle">Edit Calculation</h3>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input id="modalA" type="number" step="any" placeholder="A" />
+          <input id="modalB" type="number" step="any" placeholder="B" />
+          <select id="modalType"><option value="Add">Add</option><option value="Sub">Sub</option><option value="Multiply">Multiply</option><option value="Divide">Divide</option><option value="Power">Power</option></select>
         </div>
-      </section>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button id="modalSave">Save</button>
+          <button id="modalCancel" style="background:#f3f4f6">Cancel</button>
+        </div>
+      </div>
     </div>
 
     <script>
+      // --- auth helpers ---
       function loadUser() {
         try {
-          const userJson = localStorage.getItem('user');
           const token = localStorage.getItem('token');
-          if (!token) {
-            // not logged in, send to login
-            window.location.href = '/login.html';
-            return null;
-          }
-          const user = userJson ? JSON.parse(userJson) : null;
-          document.getElementById('username').textContent = user?.email || user?.username || '(unknown)';
-          document.getElementById('token').textContent = token || '(none)';
+          const user = localStorage.getItem('user');
+          if (!token) return null;
+          const u = user ? JSON.parse(user) : null;
+          document.getElementById('username').textContent = u?.email || u?.username || '(unknown)';
           return token;
-        } catch (err) {
-          console.error('loadUser error', err);
-          return null;
-        }
+        } catch (e) { return null; }
       }
 
-      async function fetchCalculations(token) {
-        const body = document.getElementById('calculationsBody');
-        body.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
-        try {
-          const res = await fetch('/calculations', { headers: { 'Authorization': 'Bearer ' + token } });
-          if (!res.ok) {
-            body.innerHTML = `<tr><td colspan="7">Error: ${res.status} ${await res.text()}</td></tr>`;
-            return;
-          }
+      // --- avatar menu ---
+      (function(){
+        const avatarImg = document.getElementById('avatarImg');
+        const avatarMenu = document.getElementById('avatarMenu');
+        const avatarWrapper = document.getElementById('avatarWrapper');
+        function show(){ avatarMenu.style.display='block'; avatarMenu.setAttribute('aria-hidden','false'); }
+        function hide(){ avatarMenu.style.display='none'; avatarMenu.setAttribute('aria-hidden','true'); }
+        avatarImg.addEventListener('click', (e)=>{ e.stopPropagation(); avatarMenu.style.display==='block' ? hide() : show(); });
+        document.getElementById('menuProfile').addEventListener('click', ()=>{ hide(); window.location.href='/profile.html'; });
+        document.getElementById('menuLogout').addEventListener('click', ()=>{ localStorage.removeItem('token'); localStorage.removeItem('user'); hide(); window.location.href='/login.html'; });
+        document.addEventListener('click',(ev)=>{ if (!avatarWrapper.contains(ev.target)) hide(); });
+        document.addEventListener('keydown',(ev)=>{ if (ev.key==='Escape') hide(); });
+      })();
+
+      // --- fetch / render ---
+      async function fetchStats(token){
+        const total = document.getElementById('statTotal');
+        const a = document.getElementById('statA');
+        const b = document.getElementById('statB');
+        const r = document.getElementById('statR');
+        try{
+          const res = await fetch('/calculations/stats',{headers:{'Authorization':'Bearer '+token}});
+          if(!res.ok){ total.textContent='-'; return; }
+          const s = await res.json();
+          total.textContent = s.total_count ?? '-';
+          a.textContent = (s.avg_a ?? '-');
+          b.textContent = (s.avg_b ?? '-');
+          r.textContent = (s.avg_result ?? '-');
+        }catch(e){ total.textContent='err'; }
+      }
+
+      async function fetchHistory(token){
+        const ul = document.getElementById('historyList');
+        if(!ul) return;
+        ul.innerHTML = '<li class="muted">Loading...</li>';
+        try{
+          const res = await fetch('/reports/history?limit=5',{headers:{'Authorization':'Bearer '+token}});
+          if(!res.ok){ ul.innerHTML = '<li class="muted">Error fetching history</li>'; return; }
           const data = await res.json();
-          if (!Array.isArray(data) || data.length === 0) {
-            body.innerHTML = '<tr><td class="row-empty" colspan="7">No calculations</td></tr>';
-            return;
-          }
-          body.innerHTML = data.map(c => renderRow(c)).join('');
-        } catch (err) {
-          body.innerHTML = `<tr><td colspan="7">Fetch error: ${err}</td></tr>`;
-        }
+          const items = data.items || [];
+          if(items.length===0){ ul.innerHTML = '<li class="muted">No recent calculations</li>'; return; }
+          ul.innerHTML = items.map(i=>`<li style="padding:6px 0;border-bottom:1px dashed #f0f4ff">#${i.id} ${i.type} — ${i.a}, ${i.b} → ${i.result}</li>`).join('');
+        }catch(e){ ul.innerHTML = '<li class="muted">Fetch error</li>'; }
       }
 
-      function renderRow(c) {
+      function renderRow(c){
         return `
           <tr id="row-${c.id}">
             <td>${c.id}</td>
-            <td data-a>${c.a}</td>
-            <td data-b>${c.b}</td>
-            <td data-type>${c.type}</td>
+            <td>${c.a}</td>
+            <td>${c.b}</td>
+            <td>${c.type}</td>
             <td>${c.result ?? ''}</td>
             <td class="muted">${c.created_at}</td>
-            <td class="actions">
-              <button onclick="startEdit(${c.id})">Edit</button>
-              <button onclick="deleteCalc(${c.id})">Delete</button>
-            </td>
-          </tr>
-        `;
+            <td><button onclick="openEdit(${c.id})">Edit</button> <button onclick="deleteCalc(${c.id})">Delete</button></td>
+          </tr>`;
       }
 
-      function startEdit(id) {
-        const row = document.getElementById('row-' + id);
-        if (!row) return;
-        const a = row.querySelector('[data-a]').textContent;
-        const b = row.querySelector('[data-b]').textContent;
-        const type = row.querySelector('[data-type]').textContent;
-        row.innerHTML = `
-          <td>${id}</td>
-          <td><input class="inline-input" id="edit-a-${id}" type="number" step="any" value="${a}" /></td>
-          <td><input class="inline-input" id="edit-b-${id}" type="number" step="any" value="${b}" /></td>
-          <td>
-            <select id="edit-type-${id}" class="inline-select">
-              <option value="Add" ${type==='Add'?'selected':''}>Add</option>
-              <option value="Sub" ${type==='Sub'?'selected':''}>Sub</option>
-              <option value="Multiply" ${type==='Multiply'?'selected':''}>Multiply</option>
-              <option value="Divide" ${type==='Divide'?'selected':''}>Divide</option>
-            </select>
-          </td>
-          <td id="edit-result-${id}"></td>
-          <td class="muted">(editing)</td>
-          <td class="actions">
-            <button onclick="saveEdit(${id})">Save</button>
-            <button onclick="cancelEdit(${id})">Cancel</button>
-          </td>
-        `;
+      async function fetchCalculations(token){
+        const body = document.getElementById('calculationsBody');
+        body.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+        try{
+          const res = await fetch('/calculations',{headers:{'Authorization':'Bearer '+token}});
+          if(!res.ok){ body.innerHTML = `<tr><td colspan="7">Error ${res.status}</td></tr>`; return; }
+          const data = await res.json();
+          if(!Array.isArray(data) || data.length===0){ body.innerHTML='<tr><td colspan="7" class="muted">No calculations</td></tr>'; return; }
+          const rows = data.map(renderRow).join('');
+          body.innerHTML = rows;
+        }catch(e){ body.innerHTML = `<tr><td colspan="7">Fetch error</td></tr>`; }
       }
 
-      async function saveEdit(id) {
-        const token = localStorage.getItem('token');
-        if (!token) return window.location.href = '/login.html';
-        const a = parseFloat(document.getElementById(`edit-a-${id}`).value || '0');
-        const b = parseFloat(document.getElementById(`edit-b-${id}`).value || '0');
-        const type = document.getElementById(`edit-type-${id}`).value;
-        const resultCell = document.getElementById(`edit-result-${id}`);
-        resultCell.textContent = 'Saving...';
-        try {
-          const res = await fetch(`/calculations/${id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + token
-            },
-            body: JSON.stringify({ a, b, type })
-          });
-          if (!res.ok) {
-            const txt = await res.text();
-            resultCell.textContent = `Error: ${res.status} ${txt}`;
-            return;
-          }
-          const updated = await res.json();
-          // re-render full list to keep things simple
-              fetchCalculations(token);
-              fetchStats(token);
-        } catch (err) {
-          resultCell.textContent = 'Save error: ' + err;
-        }
-      }
-
-      function cancelEdit(id) {
-        const token = localStorage.getItem('token');
-        if (!token) return window.location.href = '/login.html';
-        fetchCalculations(token);
-      }
-
-      async function deleteCalc(id) {
-        if (!confirm('Delete calculation #' + id + '?')) return;
-        const token = localStorage.getItem('token');
-        if (!token) return window.location.href = '/login.html';
-        try {
-          const res = await fetch(`/calculations/${id}`, {
-            method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + token }
-          });
-          if (res.status === 204) {
-            fetchCalculations(token);
-            fetchStats(token);
-          } else {
-            alert('Delete failed: ' + res.status);
-          }
-        } catch (err) {
-          alert('Delete error: ' + err);
-        }
-      }
-
-      document.getElementById('logoutBtn').addEventListener('click', () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login.html';
-      });
-
-      // avatar menu
-      document.getElementById('avatarImg').addEventListener('click', (e) => {
-        const m = document.getElementById('avatarMenu');
-        m.style.display = m.style.display === 'none' ? 'block' : 'none';
-      });
-      document.getElementById('menuLogout').addEventListener('click', () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login.html';
-      });
-      document.getElementById('menuProfile').addEventListener('click', () => {
-        window.location.href = '/profile.html';
-      });
-
-      document.getElementById('refreshBtn').addEventListener('click', () => {
-        const token = localStorage.getItem('token');
-        if (!token) return window.location.href = '/login.html';
-        fetchCalculations(token);
-      });
-
-      document.getElementById('createCalc').addEventListener('click', async () => {
-        const token = localStorage.getItem('token');
-        if (!token) return window.location.href = '/login.html';
-        const a = parseFloat(document.getElementById('inputA').value || '0');
-        const b = parseFloat(document.getElementById('inputB').value || '0');
+      // --- create/edit/delete ---
+      document.getElementById('createCalc').addEventListener('click', async ()=>{
+        const token = localStorage.getItem('token'); if(!token) return window.location.href='/login.html';
+        const a = parseFloat(document.getElementById('inputA').value||'0');
+        const b = parseFloat(document.getElementById('inputB').value||'0');
         const type = document.getElementById('inputType').value;
-        const msg = document.getElementById('createMsg');
-        msg.textContent = 'Creating...';
-        try {
-          const res = await fetch('/calculations', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + token
-            },
-            body: JSON.stringify({ a, b, type })
-          });
-          if (!res.ok) {
-            const txt = await res.text();
-            msg.textContent = `Error: ${res.status} ${txt}`;
-            return;
-          }
-          const created = await res.json();
-          msg.textContent = 'Created ✓';
-          // refresh list
-            fetchCalculations(token);
-            fetchStats(token);
-        } catch (err) {
-          msg.textContent = 'Create error: ' + err;
-        }
+        const msg = document.getElementById('createMsg'); msg.style.color='black'; msg.textContent='Creating...';
+        try{
+          const res = await fetch('/calculations',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({a,b,type})});
+          if(!res.ok){ msg.style.color='crimson'; msg.textContent='Create failed: '+(await res.text()); return; }
+          msg.style.color='green'; msg.textContent='Created ✓';
+          fetchCalculations(token); fetchStats(token); fetchHistory(token);
+        }catch(e){ msg.style.color='crimson'; msg.textContent='Create error'; }
       });
 
-      // initialize
-      const token = loadUser();
-      if (token) {
-        fetchCalculations(token);
-        fetchStats(token);
+      async function deleteCalc(id){
+        if(!confirm('Delete calculation #'+id+'?')) return;
+        const token = localStorage.getItem('token'); if(!token) return window.location.href='/login.html';
+        try{
+          const res = await fetch(`/calculations/${id}`,{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+          if(res.status===204){ fetchCalculations(token); fetchStats(token); fetchHistory(token); } else { alert('Delete failed'); }
+        }catch(e){ alert('Delete error'); }
       }
 
-      async function fetchStats(token) {
-        const container = document.getElementById('statsContent');
-        container.textContent = 'Loading stats...';
-        try {
-          const res = await fetch('/calculations/stats', { headers: { 'Authorization': 'Bearer ' + token } });
-          if (!res.ok) {
-            container.textContent = `Error: ${res.status}`;
-            return;
-          }
-          const s = await res.json();
-          container.innerHTML = `Total: <strong>${s.total_count}</strong> &middot; Avg A: <strong>${s.avg_a ?? '-'} </strong> &middot; Avg B: <strong>${s.avg_b ?? '-'} </strong> &middot; Avg Result: <strong>${s.avg_result ?? '-'}</strong>`;
-        } catch (err) {
-          container.textContent = 'Stats fetch error: ' + err;
-        }
+      // --- modal edit ---
+      let editId = null;
+      function openEdit(id){ editId=id; document.getElementById('modalTitle').textContent='Edit #'+id; document.getElementById('modal').style.display='flex'; // populate values
+        (async ()=>{
+          const token = localStorage.getItem('token'); if(!token) return window.location.href='/login.html';
+          const res = await fetch(`/calculations/${id}`,{headers:{'Authorization':'Bearer '+token}});
+          if(!res.ok) return alert('Failed to load');
+          const c = await res.json(); document.getElementById('modalA').value=c.a; document.getElementById('modalB').value=c.b; document.getElementById('modalType').value=c.type;
+        })();
       }
+      document.getElementById('modalCancel').addEventListener('click', ()=>{ document.getElementById('modal').style.display='none'; editId=null; });
+      document.getElementById('modalSave').addEventListener('click', async ()=>{
+        const token = localStorage.getItem('token'); if(!token) return window.location.href='/login.html';
+        const a = parseFloat(document.getElementById('modalA').value||'0');
+        const b = parseFloat(document.getElementById('modalB').value||'0');
+        const type = document.getElementById('modalType').value;
+        try{
+          const res = await fetch(`/calculations/${editId}`,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({a,b,type})});
+          if(!res.ok) return alert('Save failed: '+(await res.text()));
+          document.getElementById('modal').style.display='none'; editId=null; fetchCalculations(token); fetchStats(token); fetchHistory(token);
+        }catch(e){ alert('Save error'); }
+      });
+
+      // search box
+      document.getElementById('search').addEventListener('input', (ev)=>{
+        const q = ev.target.value.toLowerCase(); const rows = document.querySelectorAll('#calculationsBody tr');
+        rows.forEach(r=>{ const txt = r.textContent.toLowerCase(); r.style.display = txt.indexOf(q)===-1 ? 'none' : ''; });
+      });
+
+      // refresh
+      document.getElementById('refreshBtn').addEventListener('click', ()=>{ const token = localStorage.getItem('token'); if(!token) return window.location.href='/login.html'; fetchCalculations(token); fetchStats(token); fetchHistory(token); });
+
+      // init
+      (function init(){ const token = loadUser(); if(!token) return; fetchCalculations(token); fetchStats(token); fetchHistory(token); })();
     </script>
   </body>
 </html>

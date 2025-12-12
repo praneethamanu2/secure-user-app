@@ -50,11 +50,20 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
-        if username is None:
+        uid: int | None = payload.get("uid")
+        if username is None and uid is None:
             raise HTTPException(status_code=401, detail="Invalid token payload")
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
-    user = crud.get_user_by_username(db, username)
+
+    # First try to find by username (most common). If username changed since
+    # the token was issued, fall back to uid if present so users can still be
+    # authenticated after updating username.
+    user = None
+    if username:
+        user = crud.get_user_by_username(db, username)
+    if not user and uid is not None:
+        user = crud.get_user_by_id(db, uid)
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
     return user
@@ -79,6 +88,12 @@ def get_dashboard():
     static_dir = Path(__file__).parent / "static"
     return FileResponse(static_dir / "dashboard.html")
 
+
+@app.get("/profile.html")
+def get_profile():
+    static_dir = Path(__file__).parent / "static"
+    return FileResponse(static_dir / "profile.html")
+
 @app.post("/users/", response_model=schemas.UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     if crud.get_user_by_username(db, user_in.username):
@@ -97,7 +112,7 @@ def register_user(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(400, "Email already exists")
     user = crud.create_user(db, user_in)
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+    access_token = create_access_token(data={"sub": user.username, "uid": user.id}, expires_delta=access_token_expires)
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -112,7 +127,7 @@ def login_user(user_in: schemas.UserLogin, db: Session = Depends(get_db)):
     if not user or not verify_password(user_in.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+    access_token = create_access_token(data={"sub": user.username, "uid": user.id}, expires_delta=access_token_expires)
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -161,6 +176,18 @@ def add_calculation(calc_in: schemas.CalculationCreate, db: Session = Depends(ge
 def calculations_stats(db: Session = Depends(get_db)):
     """Return aggregate statistics about calculations."""
     return crud.get_calculation_stats(db)
+
+
+@app.get("/reports/summary", response_model=schemas.CalculationStats)
+def reports_summary(db: Session = Depends(get_db)):
+    """Alias endpoint for calculation summary/reporting."""
+    return crud.get_calculation_stats(db)
+
+
+@app.get("/reports/history", response_model=schemas.ReportHistory)
+def reports_history(limit: int = 20, offset: int = 0, db: Session = Depends(get_db)):
+    """Return recent calculation history with pagination."""
+    return crud.get_calculation_history(db, limit=limit, offset=offset)
 
 
 @app.get("/calculations", response_model=list[schemas.CalculationRead])
