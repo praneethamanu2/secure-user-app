@@ -226,12 +226,3 @@ curl -s -X POST "http://localhost:8000/calculations" \
   - Usability: a simple dashboard with create/edit/delete operations and a compact recent history/reporting panel.
   - Testability: small changes were made to support stable Playwright tests (explicit IDs, minor compatibility inputs) so UI flows are robust.
 
-- Tradeoffs & future improvements:
-  - The frontend is static HTML + vanilla JS for simplicity; if the app grows, migrating to a reactive framework (React/Vue/Svelte) would help manage complexity.
-  - Some synchronous UI polling is used (e.g., `wait_for_timeout`) to keep E2E tests reliable; replacing this with event-driven WebSocket or server-sent events would be more efficient.
-  - Currently no Alembic migrations are included because no schema change was required; adding Alembic would be advisable before making future DB schema changes.
-
-If you'd like I can:
-- Add Alembic scaffolding and an initial migration.
-- Improve CI to run Playwright E2E in a separate job and cache Playwright browsers for speed.
-- Tag and push a release image to Docker Hub.
