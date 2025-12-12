@@ -1,341 +1,140 @@
-```
-# Secure User App – FastAPI + PostgreSQL + Docker + CI/CD + JWT + E2E Testing
-```
-# Secure User App – FastAPI + PostgreSQL + Docker + CI/CD + JWT + E2E Testing
+ 
+# Secure User App — FastAPI, Docker, JWT, and E2E Testing
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/pmanu2/secure-user-app.svg)](https://hub.docker.com/r/pmanu2/secure-user-app)
 
-
-This project implements a **secure user registration and authentication system** using FastAPI, SQLAlchemy, Pydantic, JWT tokens, and Playwright for end-to-end testing.  
-It includes password hashing, JWT token generation, front-end registration/login pages with client-side validation, Playwright E2E tests, automated tests, Dockerization, and a CI/CD pipeline that builds and pushes images to Docker Hub.
+This repository provides a small web application demonstrating secure user registration and authentication using FastAPI, SQLAlchemy, Pydantic, and JWT. It includes a static frontend for registration and login, calculation endpoints, automated tests (unit and integration), Playwright end-to-end tests, and a CI workflow for running tests and publishing a Docker image.
 
 ---
 
 ## Features
 
-### Module 11-12 Features
-- FastAPI backend with user registration/login endpoints
-- SQLAlchemy `User` and `Calculation` models
-- Calculation factory pattern with Add, Sub, Multiply, Divide operations
-- Full BREAD endpoints for calculations (Browse, Read, Edit, Add, Delete)
-- Pydantic schemas for users and calculations
+- Secure user registration and authentication with JWT tokens
 - Password hashing and verification using `passlib`
-- Unit and integration tests (`pytest`) with 100% code coverage
-- Dockerfile + `docker-compose.yml` for running app + PostgreSQL
-- GitHub Actions CI: runs tests and pushes Docker image on successful test runs
-
-### Module 13 Features (JWT & E2E Testing)
-- **JWT Authentication**: Register and login endpoints return JWT tokens
-- **Front-End Pages**: Responsive registration and login HTML pages with client-side validation
-  - Email format validation
-  - Password strength requirements (min 6 characters)
-  - Password confirmation matching
-  - Error messaging and success feedback
-- **Playwright E2E Tests**: Comprehensive end-to-end testing
-  - Positive tests: successful registration and login with valid data
-  - Negative tests: invalid email format, short passwords, password mismatch, wrong credentials
-  - Tests verify UI state changes, error messages, and redirects
-- **CI/CD Integration**: Playwright tests run automatically in GitHub Actions pipeline
-- **Token Storage**: JWT tokens stored in localStorage for persistent authentication
+- Calculation endpoints supporting Add, Sub, Multiply, Divide, and Power operations
+- Full BREAD (Browse, Read, Edit, Add, Delete) for calculations
+- Static HTML frontend pages for registration, login, dashboard, and profile
+- Automated tests: unit, integration, and Playwright E2E tests
+- Dockerfile and `docker-compose.yml` for containerized runs
+- GitHub Actions workflow to run tests and optionally build/push a Docker image
 
 ---
 
 ## Tech Stack
 
-- Language: Python
-- Framework: FastAPI
-- ORM: SQLAlchemy
-- Validation: Pydantic
-- Auth: JWT (python-jose) + Password Hashing (passlib pbkdf2_sha256)
-- Frontend: HTML/CSS/JavaScript with client-side validation
-- E2E Testing: Playwright
-- Databases: PostgreSQL (for Docker / CI), SQLite (for local tests)
-- Containers: Docker, docker-compose
-- CI/CD: GitHub Actions
-- Registry: Docker Hub (`pmanu2/secure-user-app`)
+- Python 3.10+
+- FastAPI
+- SQLAlchemy
+- Pydantic
+- JWT (python-jose)
+- Playwright (for E2E tests)
+- Docker & Docker Compose
+- GitHub Actions (CI)
 
 ---
 
-## Project Structure
+## Project Layout
 
-```text
-secure-user-app/
-├── app/
-│   ├── main.py              # FastAPI application, routes, dependency injection
-│   ├── database.py          # SQLAlchemy engine, SessionLocal, Base
-│   ├── models.py            # SQLAlchemy models: User, Calculation
-│   ├── schemas.py           # Pydantic schemas (UserCreate, UserRead, UserLogin, TokenResponse, etc.)
-│   ├── crud.py              # CRUD functions for users & calculations
-│   ├── calculations.py      # Calculation factory and operation implementations
-│   ├── security.py          # Password hashing, verification, and JWT token generation
-│   └── static/
-│       ├── register.html    # User registration form (Module 13)
-│       └── login.html       # User login form (Module 13)
-├── tests/
-│   ├── conftest.py          # pytest fixtures and database setup
-│   ├── test_*.py            # Unit and integration tests (100% coverage)
-│   └── test_e2e_playwright.py  # Playwright E2E tests (Module 13)
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-└── .github/workflows/ci.yml
+Key files and folders:
+
+```
+app/
+  main.py          # FastAPI application and routes
+  database.py      # SQLAlchemy engine and session
+  models.py        # ORM models for users and calculations
+  schemas.py       # Pydantic schemas
+  crud.py          # CRUD helpers
+  calculations.py  # Calculation operations (Add, Sub, Multiply, Divide, Power)
+  security.py      # Password hashing and JWT utilities
+  static/          # Frontend HTML/CSS/JS
+tests/             # pytest unit/integration and Playwright E2E tests
+Dockerfile
+docker-compose.yml
+.github/workflows/ci.yml
+README.md
 ```
 
-## Running the App with Docker Compose
+---
 
-Make sure Docker Desktop (or Docker Engine) is running.
+## Running Locally (with Docker Compose)
 
-From the project root, build and start the services:
+Ensure Docker is running, then from the project root:
 
 ```bash
 docker-compose up --build
 ```
 
-This will:
+This starts a PostgreSQL service and the FastAPI app. The app will be available on port 8000.
 
-- Start a PostgreSQL container
-- Build the FastAPI app image
-- Run the FastAPI container on port 8000
+- Root: `http://localhost:8000/`
+- API docs (Swagger UI): `http://localhost:8000/docs`
 
-Access the API
+## Running Locally (without Docker)
 
-- Root endpoint: `http://localhost:8000/`
-- Interactive API docs (Swagger UI): `http://localhost:8000/docs`
-
-## Quick start — run locally (no Docker)
-
-If you prefer to run the app locally without Docker, use your virtual environment and start uvicorn:
-
-```bash
-source .venv/bin/activate
-uvicorn app.main:app --reload --port 8000
-# then open http://127.0.0.1:8000/docs or the static pages under /static
-```
-
-## How to Run Tests Locally
-
-Local tests use a SQLite test database by default (configured in `tests/conftest.py` via `TEST_DATABASE_URL`).
-
-1. (Optional) Create and activate a virtual environment:
+Using a virtual environment is recommended:
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # macOS/Linux
-# .venv\Scripts\activate   # Windows
-```
-
-2. Install dependencies:
-
-```bash
-python -m pip install --upgrade pip
+source .venv/bin/activate
 pip install -r requirements.txt
-pip install pytest pytest-cov coverage
+uvicorn app.main:app --reload --port 8000
 ```
 
-3. Run the tests (quick):
+Open `http://127.0.0.1:8000/docs` for API docs or the static pages under `/static`.
+
+---
+
+## Tests
+
+Local tests use a SQLite test database by default (configured in `tests/conftest.py`).
+
+Install test dependencies and run pytest:
 
 ```bash
+pip install -r requirements.txt
+pip install pytest pytest-cov
 pytest -q
 ```
 
-4. Run tests with coverage locally (same command used in CI):
+To run Playwright E2E tests locally:
 
 ```bash
-pytest --cov=app --cov-report=term-missing --cov-fail-under=100
-```
-
-If you prefer the coverage run flow:
-
-```bash
-python -m coverage run -m pytest
-python -m coverage report -m
-```
-
-## Calculation Model & Usage (Module 11–12)
-
-- `CalculationCreate` accepts `a`, `b`, and `type` (one of `Add`, `Sub`, `Multiply`, `Divide`).
-- The application computes the `result` via the factory in `app/calculations.py` and persists it in the `calculations` table.
-- Division by zero is validated/handled and will raise an error during calculation.
-
-### Calculation BREAD Endpoints (Module 12)
-
-- **Browse:** `GET /calculations` — List all calculations
-- **Read:** `GET /calculations/{id}` — Get a specific calculation
-- **Edit:** `PUT /calculations/{id}` — Update a calculation (a, b, type; result recomputed)
-- **Add:** `POST /calculations` — Create a new calculation
-- **Delete:** `DELETE /calculations/{id}` — Remove a calculation
-
-### User Authentication Endpoints (Module 12)
-
-- **Register:** `POST /users/register` — Create a new user account
-- **Login:** `POST /users/login` — Authenticate user (username + password; returns JWT token if valid)
-- **Create User:** `POST /users/` — Alias for registration
-
-### JWT Response Format (Module 13)
-
-When registering or logging in successfully, both `/users/register` and `/users/login` return:
-
-```json
-{
-  "access_token": "eyJhbGc...",
-  "token_type": "bearer",
-  "user": {
-    "id": 1,
-    "username": "testuser",
-    "email": "test@example.com"
-  }
-}
-```
-
-The `access_token` is a JWT token that can be used for future authenticated requests. It is automatically stored in `localStorage` by the front-end pages.
-
-## Front-End Pages (Module 13)
-
-### Registration Page
-
-Access at: `http://localhost:8000/register.html`
-
-**Features:**
-- Client-side validation for:
-  - Username (min 3 characters)
-  - Email (valid email format)
-  - Password (min 6 characters)
-  - Password confirmation (must match)
-- Real-time error messages
-- Success message on registration
-- Auto-redirect to dashboard on success
-- Links to login page
-
-### Login Page
-
-Access at: `http://localhost:8000/login.html`
-
-**Features:**
-- Client-side validation for:
-  - Username (required)
-  - Password (required)
-- Server-side authentication (verifies credentials)
-- Error messages for invalid credentials
-- Success message on login
-- Auto-redirect to dashboard on success
-- Links to registration page
-
-## Running Playwright E2E Tests (Module 13)
-
-Playwright tests verify both the front-end pages and backend authentication flows.
-
-### Local Testing
-
-1. Install Playwright browsers:
-```bash
-playwright install chromium
-```
-
-2. Run the E2E tests:
-```bash
+python -m playwright install chromium
 pytest tests/test_e2e_playwright.py -v
 ```
 
-**Test Coverage:**
-- ✅ `test_register_user_success` - Register with valid data
-- ✅ `test_register_user_invalid_email` - Reject invalid email format
-- ✅ `test_register_user_short_password` - Reject password < 6 chars
-- ✅ `test_register_user_password_mismatch` - Reject mismatched passwords
-- ✅ `test_login_user_success` - Login with correct credentials
-- ✅ `test_login_user_invalid_password` - Reject wrong password (401)
-- ✅ `test_login_user_nonexistent` - Reject non-existent user
+---
 
-### CI/CD Integration
+## API Overview
 
-The GitHub Actions workflow (`.github/workflows/ci.yml`) automatically:
-1. Installs Playwright browsers
-2. Runs all Playwright E2E tests
-3. Reports pass/fail status
-4. Pushes Docker image to Docker Hub only if all tests pass
+Authentication endpoints:
 
-Example workflow run output:
-```
-Installing Playwright browsers...
-Running Playwright E2E Tests...
-test_register_user_success PASSED
-test_register_user_invalid_email PASSED
-test_login_user_success PASSED
-... (7 tests total)
-```
+- `POST /users/register` — Create a new user (returns access token)
+- `POST /users/login` — Authenticate and receive an access token
 
-Or use curl/httpie to test the API:
+Calculation endpoints:
 
-```bash
-# Register with JWT response
-curl -X POST "http://localhost:8000/users/register" \
-  -H "Content-Type: application/json" \
-  -d '{"username":"testuser","email":"test@example.com","password":"pass123"}'
-# Response includes access_token, token_type, user
+- `GET /calculations` — List calculations
+- `GET /calculations/{id}` — Read a calculation
+- `POST /calculations` — Create a calculation (body: `a`, `b`, `type`)
+- `PUT /calculations/{id}` — Update a calculation
+- `DELETE /calculations/{id}` — Delete a calculation
 
-# Login to get JWT token
-curl -X POST "http://localhost:8000/users/login" \
-  -H "Content-Type: application/json" \
-  -d '{"username":"testuser","password":"pass123"}'
+When registration or login succeed, the API returns a JSON object containing an `access_token` and `user` information. The `access_token` is a JWT suitable for Authorization headers.
 
-# Add a calculation
-curl -X POST "http://localhost:8000/calculations" \
-  -H "Content-Type: application/json" \
-  -d '{"a":10,"b":2,"type":"Divide"}'
+---
 
-# Browse all calculations
-curl -X GET "http://localhost:8000/calculations"
+## Playwright E2E Tests and CI
 
-# Read a specific calculation (replace 1 with actual ID)
-curl -X GET "http://localhost:8000/calculations/1"
+Playwright tests exercise both frontend and backend flows. The repository includes a GitHub Actions workflow (`.github/workflows/ci.yml`) configured to install dependencies, run tests, and build/push the Docker image when credentials are provided via secrets.
 
-# Update a calculation
-curl -X PUT "http://localhost:8000/calculations/1" \
-  -H "Content-Type: application/json" \
-  -d '{"a":20,"b":4,"type":"Divide"}'
+To run E2E tests locally, install Playwright browsers and run the specific test file as shown in the Tests section above.
 
-# Delete a calculation
-curl -X DELETE "http://localhost:8000/calculations/1"
-```
-
-## CI/CD (GitHub Actions)
-
-- Workflow: `.github/workflows/ci.yml`
-- On push to `main`, the job:
-  - Starts a PostgreSQL service inside the runner
-  - Sets `TEST_DATABASE_URL` to point at the service
-  - Installs dependencies
-  - Runs `pytest` with coverage and fails the job if coverage < 100%
-- After tests succeed, the `build-and-push` job builds and pushes an image to Docker Hub using `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets.
-
-If Actions fails with DB hostname resolution, the workflow was updated to use `localhost` for `TEST_DATABASE_URL` so the runner connects through the mapped port.
-
-## Module 13 Summary
-
-**JWT Authentication:**
-- /register and /login endpoints now return JWT tokens along with user info
-- Tokens are generated using python-jose and include expiration (30 minutes by default)
-- SECRET_KEY can be set via environment variable (required for production)
-
-**Front-End Pages:**
-- Fully responsive HTML pages for registration and login
-- Client-side validation with real-time error feedback
-- Password confirmation matching on registration
-- Token automatically stored in localStorage on success
-- Clean UI with gradient backgrounds and accessibility features
-
-**Playwright E2E Tests:**
-- 7 comprehensive tests covering positive and negative scenarios
-- Tests verify form field validation, submission, and error/success messages
-- Integration with pytest framework
-- Runs in CI/CD pipeline before Docker image push
-
-**Test Coverage:**
-- Maintained 100% code coverage on app/ package
-- Added 39 test (unit + integration + E2E)
+---
 
 ## Docker Hub
 
-The image (when built by CI) is pushed to Docker Hub under the repository `pmanu2/secure-user-app` with the `latest` tag.
+An image can be published to Docker Hub under `pmanu2/secure-user-app`. The CI workflow will attempt to push an image if `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` secrets are set in the repository.
 
 Pull with:
 
@@ -343,60 +142,20 @@ Pull with:
 docker pull pmanu2/secure-user-app:latest
 ```
 
-Docker Hub repository (open in browser):
-
-https://hub.docker.com/r/pmanu2/secure-user-app
-
-## Notes & Next Steps
-
-- The codebase emits some deprecation warnings from Pydantic v2 and FastAPI lifecycle events — these are non-blocking but can be addressed in a follow-up.
-- Test coverage is at 99% for the `app` package (37 passing tests). A few exception handlers in endpoints are hard to reach without monkey-patching.
-- All user and calculation routes are fully tested with comprehensive integration tests.
+More details and examples for using the API are included in this README and the `app/static` frontend pages.
 
 ---
 
-## Module 12 Summary
+## Notes and Next Steps
 
-**Completed:**
-- User registration and login endpoints with secure password verification
-- Full BREAD endpoints for calculations (Browse, Read, Edit, Add, Delete)
-- 37 integration tests covering user routes, calculation routes, and edge cases
-- Updated CI/CD pipeline to run all tests and push Docker images on success
-- Complete documentation in README with curl examples
- 
-**Run & Test Guide**
+- The codebase produces some runtime warnings from dependencies; these are non-blocking and can be addressed later.
+- If you want database schema migrations, we can add Alembic scaffolding in a follow-up.
+- CI can be refined to separate unit/integration and E2E jobs for faster feedback.
 
-- **Repository Docker Hub:** `pmanu2/secure-user-app` — https://hub.docker.com/r/pmanu2/secure-user-app
-**Requirements (local)**
-- Python 3.10+ (3.12 used for development here)
-- Git
-- Docker & Docker Compose (for containerized run)
-- Optional: Node/Playwright CLI (we use Playwright Python support)
+---
 
-**Create & activate virtualenv (recommended)**
-```bash
-python -m venv .venv
-source .venv/bin/activate   # macOS / Linux
-# .venv\Scripts\activate   # Windows
-```
+If you'd like the README reorganized further, shortened, or expanded with examples (curl, httpie, or Postman collections), tell me which sections to change.
 
-**Install Python dependencies**
-```bash
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-**Install Playwright browsers (for E2E tests)**
-```bash
-python -m playwright install --with-deps
-```
-
-**Run the app locally (no Docker)**
-```bash
-# from repository root
-source .venv/bin/activate
-uvicorn app.main:app --reload --port 8000
-```
 
 Open the site:
 - Register/login pages: `http://127.0.0.1:8000/register.html` and `http://127.0.0.1:8000/login.html`
